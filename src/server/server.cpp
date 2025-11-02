@@ -50,11 +50,6 @@ public:
 
     int poll() {
 
-        if (!listener_open) {
-            errno = 0;
-            throw std::runtime_error("SERVER: No listener socket to accept connections on.");
-        }
-
         if (!receiver_open) {
             errno = 0;
             throw std::runtime_error("SERVER: No receiver socket to poll.");
