@@ -3,6 +3,7 @@
 #include <cstring>
 #include <iostream>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <string>
 #include <sys/socket.h>
 #include <thread>
@@ -16,10 +17,22 @@ class Client {
 
 public:
 
-    Client() {
+    Client(
+        uint16_t a_port,
+        std::string a_server_address
+    ) {
         server_address.sin_family = AF_INET;
-        server_address.sin_port = htons(65535);
-        server_address.sin_addr.s_addr = INADDR_ANY;
+        server_address.sin_port = htons(a_port);
+
+        try {
+            err_status = inet_pton(AF_INET, a_server_address.data(), &server_address.sin_addr);
+            if (err_status == -1) throw std::runtime_error("CLIENT: Invalid server address.");
+        }
+
+        catch (const std::exception& e) {
+            std::cerr << e.what() << std::endl;
+            std::cerr << "Reason: " << std::strerror(errno) << std::endl;
+        }
     }
 
     ~Client() {}
@@ -69,21 +82,22 @@ public:
         ::close(sender_socket);
     }
 
-    void send() {
+    void send(
+        const void *data,
+        const size_t length
+    ) {
         if (!sender_open) {
             std::cerr << "CLIENT: Socket not opened." << std::endl;
             return;
         }
 
         try {
-            std::string client_message = "Hello from client!";
-
             ssize_t total_bytes_sent = 0;
-            while (total_bytes_sent < client_message.size()) {
+            while (total_bytes_sent < length) {
                 bytes_sent = ::send(
                     sender_socket,
-                    client_message.c_str() + total_bytes_sent,
-                    client_message.size() - total_bytes_sent,
+                    data + total_bytes_sent,
+                    length - total_bytes_sent,
                     0
                 );
                 if (bytes_sent == -1) throw std::runtime_error("CLIENT: Failed to send message.");
@@ -115,11 +129,13 @@ private:
 
 int main() {
 
-    SocketDemo::Client client;
+    SocketDemo::Client client(65535, "127.0.0.1");
+
+    std::string message = "Hello from Client!";
 
     client.open();
     client.connect();
-    client.send();
+    client.send(message.data(), message.size());
     client.close();
 
     return EXIT_SUCCESS;

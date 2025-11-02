@@ -16,12 +16,17 @@ class Server {
 
 public:
 
-    Server() {
+    Server(
+        uint16_t a_port,
+        std::size_t a_buffer_size
+    ):
+    port(a_port)
+    {
         server_address.sin_family = AF_INET;
-        server_address.sin_port = htons(65535);
+        server_address.sin_port = htons(port);
         server_address.sin_addr.s_addr = INADDR_ANY;
 
-        buffer.resize(1024);
+        buffer.resize(a_buffer_size);
     }
 
     ~Server() {}
@@ -109,6 +114,8 @@ public:
 
 private:
 
+    const uint16_t port;
+
     sockaddr_in server_address;
 
     int listener_socket;
@@ -129,7 +136,7 @@ private:
 
 int main() {
 
-    SocketDemo::Server server;
+    SocketDemo::Server server(65535, 1024);
 
     server.open();
     server.accept();
