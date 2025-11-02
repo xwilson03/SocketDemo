@@ -3,36 +3,63 @@
 #include <stdlib.h>
 #include <string>
 #include <sys/socket.h>
+#include <thread>
 #include <unistd.h>
 #include <vector>
 
 
-int main()
+int server_main()
 {
-    int serverListenerSocket = socket(AF_INET, SOCK_STREAM, 0);
-    int clientSendSocket = socket(AF_INET, SOCK_STREAM, 0);
 
     sockaddr_in serverAddress;
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(65535);
     serverAddress.sin_addr.s_addr = INADDR_ANY;
 
-    bind(serverListenerSocket, (struct sockaddr*) &serverAddress, sizeof(serverAddress));
-    listen(serverListenerSocket, 5);
 
-    connect(clientSendSocket, (struct sockaddr*) &serverAddress, sizeof(serverAddress));
-    int serverReceiverSocket = accept(serverListenerSocket, nullptr, nullptr);
+    int listenerSocket = socket(AF_INET, SOCK_STREAM, 0);
+    bind(listenerSocket, (struct sockaddr*) &serverAddress, sizeof(serverAddress));
+    listen(listenerSocket, 5);
 
-    std::string clientMessage = "hello from client!";
-    send(clientSendSocket, clientMessage.c_str(), clientMessage.size(), 0);
+    int receiverSocket = accept(listenerSocket, nullptr, nullptr);
 
     std::vector<char> buffer(1024);
-    recv(serverReceiverSocket, buffer.data(), buffer.size(), 0);
+    recv(receiverSocket, buffer.data(), buffer.size(), 0);
     std::cout << "Server received message: " << std::string(buffer.data(), buffer.size()) << std::endl;
 
-    close(clientSendSocket);
-    close(serverReceiverSocket);
-    close(serverListenerSocket);
+    close(receiverSocket);
+    close(listenerSocket);
+    return EXIT_SUCCESS;
+}
+
+
+int client_main()
+{
+
+    sockaddr_in serverAddress;
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_port = htons(65535);
+    serverAddress.sin_addr.s_addr = INADDR_ANY;
+
+
+    int sendSocket = socket(AF_INET, SOCK_STREAM, 0);
+    connect(sendSocket, (struct sockaddr*) &serverAddress, sizeof(serverAddress));
+
+    std::string clientMessage = "hello from client!";
+    send(sendSocket, clientMessage.c_str(), clientMessage.size(), 0);
+
+    close(sendSocket);
+    return EXIT_SUCCESS;
+}
+
+
+int main()
+{
+    std::thread server_thread (server_main);
+    std::thread client_thread (client_main);
+
+    client_thread.join();
+    server_thread.join();
 
     return EXIT_SUCCESS;
 }
