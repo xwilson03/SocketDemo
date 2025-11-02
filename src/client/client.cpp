@@ -34,6 +34,8 @@ public:
         close();
     }
 
+    Client(const Client& other) = delete;
+    Client& operator=(const Client& other) = delete;
 
     void connect() {
         if (!sender_open) {
