@@ -18,9 +18,11 @@ class Client {
 public:
 
     Client(
-        uint16_t a_port,
-        std::string a_server_address
-    ) {
+        const uint16_t a_port,
+        const std::string &a_server_address
+    ):
+    port(a_port)
+    {
         server_address.sin_family = AF_INET;
         server_address.sin_port = htons(a_port);
 
@@ -88,14 +90,14 @@ private:
         if (sender_open) ::close(sender_socket);
     }
 
+    const uint16_t port;
     sockaddr_in server_address;
 
-    int sender_socket;
-
+    int sender_socket = -1;
     bool sender_open = false;
 
-    int err_status;
-    ssize_t bytes_sent;
+    int err_status = 0;
+    ssize_t bytes_sent = 0;
 
 }; // class Client
 

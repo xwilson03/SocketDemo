@@ -17,8 +17,8 @@ class Server {
 public:
 
     Server(
-        uint16_t a_port,
-        std::size_t a_buffer_size
+        const uint16_t a_port,
+        const std::size_t a_buffer_size
     ):
     port(a_port)
     {
@@ -95,17 +95,16 @@ private:
     }
 
     const uint16_t port;
-
     sockaddr_in server_address;
 
-    int listener_socket;
-    int receiver_socket;
+    int listener_socket = -1;
+    int receiver_socket = -1;
 
     bool listener_open = false;
     bool receiver_open = false;
 
-    int err_status;
-    ssize_t bytes_received;
+    int err_status = 0;
+    ssize_t bytes_received = 0;
 
     std::vector<char> buffer;
 
