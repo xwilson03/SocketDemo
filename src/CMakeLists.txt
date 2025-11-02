@@ -1,9 +1,15 @@
-add_executable(main
-  main.cpp
+add_executable(client
+  client.cpp
 )
+
+add_executable(server
+  server.cpp
+)
+
 install(
   TARGETS
-    main
+    client
+    server
   RUNTIME DESTINATION
     ${CMAKE_INSTALL_BINDIR}
 )
