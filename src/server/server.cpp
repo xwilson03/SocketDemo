@@ -118,9 +118,10 @@ int main() {
     try {
         SocketDemo::Server server(65535, 1024);
 
-        server.accept();
-
-        while(server.poll());
+        while(true) {
+            server.accept();
+            while(server.poll());
+        }
     }
 
     catch (const std::exception& e) {
