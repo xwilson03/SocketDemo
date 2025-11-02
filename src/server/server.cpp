@@ -39,48 +39,33 @@ public:
     void accept() {
 
         if (!listener_open) {
-            std::cerr << "SERVER: No listener socket to accept connections on." << std::endl;
-            return;
+            errno = 0;
+            throw std::runtime_error("SERVER: No listener socket to accept connections on.");
         }
 
-        try {
-            receiver_socket = ::accept(listener_socket, nullptr, nullptr);
-            if (receiver_socket == -1) throw std::runtime_error("SERVER: Failed to accept connection.");
-            receiver_open = true;
-        }
-
-        catch (const std::exception& e) {
-            std::cerr << e.what() << std::endl;
-            std::cerr << "Reason: " << std::strerror(errno) << std::endl;
-        }
+        receiver_socket = ::accept(listener_socket, nullptr, nullptr);
+        if (receiver_socket == -1) throw std::runtime_error("SERVER: Failed to accept connection.");
+        receiver_open = true;
     }
 
     int poll() {
 
         if (!listener_open) {
-            std::cerr << "SERVER: No listener socket to accept connections on." << std::endl;
-            return -1;
+            errno = 0;
+            throw std::runtime_error("SERVER: No listener socket to accept connections on.");
         }
 
         if (!receiver_open) {
-            std::cerr << "SERVER: No receiver socket to poll." << std::endl;
-            return -1;
+            errno = 0;
+            throw std::runtime_error("SERVER: No receiver socket to poll.");
         }
 
-        try {
-            bytes_received = recv(receiver_socket, buffer.data(), buffer.size(), 0);
+        bytes_received = recv(receiver_socket, buffer.data(), buffer.size(), 0);
 
-            if (bytes_received == -1) throw std::runtime_error("SERVER: Failed to receive message.");
-            if (bytes_received == 0) {
-                std::cout << "SERVER: Client disconnected." << std::endl;
-                return 1;
-            }
-        }
-
-        catch (const std::exception& e) {
-            std::cerr << e.what() << std::endl;
-            std::cerr << "Reason: " << std::strerror(errno) << std::endl;
-            return -1;
+        if (bytes_received == -1) throw std::runtime_error("SERVER: Failed to receive message.");
+        if (bytes_received == 0) {
+            std::cout << "SERVER: Client disconnected." << std::endl;
+            return 1;
         }
 
         std::cout << "SERVER: Received message: " << std::string(buffer.data(), bytes_received) << std::endl;
@@ -92,26 +77,19 @@ private:
     void open() {
 
         if (listener_open) {
-            std::cerr << "SERVER: Listener socket already open." << std::endl;
-            return;
+            errno = 0;
+            throw std::runtime_error("SERVER: Listener socket already open.");
         }
 
-        try {
-            listener_socket = socket(AF_INET, SOCK_STREAM, 0);
-            if (listener_socket == -1) throw std::runtime_error("SERVER: Failed to open listener socket.");
-            listener_open = true;
+        listener_socket = socket(AF_INET, SOCK_STREAM, 0);
+        if (listener_socket == -1) throw std::runtime_error("SERVER: Failed to open listener socket.");
+        listener_open = true;
 
-            err_status = bind(listener_socket, (struct sockaddr*) &server_address, sizeof(server_address));
-            if (err_status == -1) throw std::runtime_error("SERVER: Failed to bind listener socket.");
+        err_status = bind(listener_socket, (struct sockaddr*) &server_address, sizeof(server_address));
+        if (err_status == -1) throw std::runtime_error("SERVER: Failed to bind listener socket.");
 
-            err_status = ::listen(listener_socket, 5);
-            if (err_status == -1) throw std::runtime_error("SERVER: Failed to set listener socket status.");
-        }
-
-        catch (const std::exception& e) {
-            std::cerr << e.what() << std::endl;
-            std::cerr << "Reason: " << std::strerror(errno) << std::endl;
-        }
+        err_status = ::listen(listener_socket, 5);
+        if (err_status == -1) throw std::runtime_error("SERVER: Failed to set listener socket status.");
     }
 
     void close() {
@@ -141,15 +119,18 @@ private:
 
 int main() {
 
-    SocketDemo::Server server(65535, 1024);
+    try {
+        SocketDemo::Server server(65535, 1024);
 
-    server.accept();
+        server.accept();
 
-    int err_status;
-    while(true) {
-        err_status = server.poll();
-        if (err_status != 0) break;
+        while(server.poll());
     }
 
-    return err_status;
+    catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        std::cerr << "Reason: " << std::strerror(errno) << std::endl;
+    }
+
+    return EXIT_SUCCESS;
 }
