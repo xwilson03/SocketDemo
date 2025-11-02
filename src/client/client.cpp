@@ -33,28 +33,14 @@ public:
             std::cerr << e.what() << std::endl;
             std::cerr << "Reason: " << std::strerror(errno) << std::endl;
         }
+
+        open();
     }
 
-    ~Client() {}
-
-    void open() {
-
-        if (sender_open) {
-            std::cerr << "CLIENT: Socket already open." << std::endl;
-            return;
-        }
-
-        try {
-            sender_socket = socket(AF_INET, SOCK_STREAM, 0);
-            if (sender_socket == -1) throw std::runtime_error("CLIENT: Failed to open socket.");
-            sender_open = true;
-        }
-
-        catch (const std::exception& e) {
-            std::cerr << e.what() << std::endl;
-            std::cerr << "Reason: " << std::strerror(errno) << std::endl;
-        }
+    ~Client() {
+        close();
     }
+
 
     void connect() {
         if (!sender_open) {
@@ -71,15 +57,6 @@ public:
             std::cerr << e.what() << std::endl;
             std::cerr << "Reason: " << std::strerror(errno) << std::endl;
         }
-    }
-
-    void close() {
-        if (!sender_open) {
-            std::cerr << "CLIENT: No socket to close." << std::endl;
-            return;
-        }
-
-        ::close(sender_socket);
     }
 
     void send(
@@ -113,6 +90,34 @@ public:
 
 private:
 
+    void open() {
+
+        if (sender_open) {
+            std::cerr << "CLIENT: Socket already open." << std::endl;
+            return;
+        }
+
+        try {
+            sender_socket = socket(AF_INET, SOCK_STREAM, 0);
+            if (sender_socket == -1) throw std::runtime_error("CLIENT: Failed to open socket.");
+            sender_open = true;
+        }
+
+        catch (const std::exception& e) {
+            std::cerr << e.what() << std::endl;
+            std::cerr << "Reason: " << std::strerror(errno) << std::endl;
+        }
+    }
+
+    void close() {
+        if (!sender_open) {
+            std::cerr << "CLIENT: No socket to close." << std::endl;
+            return;
+        }
+
+        ::close(sender_socket);
+    }
+
     sockaddr_in server_address;
 
     int sender_socket;
@@ -133,10 +138,8 @@ int main() {
 
     std::string message = "Hello from Client!";
 
-    client.open();
     client.connect();
     client.send(message.data(), message.size());
-    client.close();
 
     return EXIT_SUCCESS;
 }

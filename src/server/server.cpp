@@ -27,34 +27,14 @@ public:
         server_address.sin_addr.s_addr = INADDR_ANY;
 
         buffer.resize(a_buffer_size);
+
+        open();
     }
 
-    ~Server() {}
-
-    void open() {
-
-        if (listener_open) {
-            std::cerr << "SERVER: Listener socket already open." << std::endl;
-            return;
-        }
-
-        try {
-            listener_socket = socket(AF_INET, SOCK_STREAM, 0);
-            if (listener_socket == -1) throw std::runtime_error("SERVER: Failed to open listener socket.");
-            listener_open = true;
-
-            err_status = bind(listener_socket, (struct sockaddr*) &server_address, sizeof(server_address));
-            if (err_status == -1) throw std::runtime_error("SERVER: Failed to bind listener socket.");
-
-            err_status = ::listen(listener_socket, 5);
-            if (err_status == -1) throw std::runtime_error("SERVER: Failed to set listener socket status.");
-        }
-
-        catch (const std::exception& e) {
-            std::cerr << e.what() << std::endl;
-            std::cerr << "Reason: " << std::strerror(errno) << std::endl;
-        }
+    ~Server() {
+        close();
     }
+
 
     void accept() {
 
@@ -107,12 +87,37 @@ public:
         return 0;
     }
 
+private:
+
+    void open() {
+
+        if (listener_open) {
+            std::cerr << "SERVER: Listener socket already open." << std::endl;
+            return;
+        }
+
+        try {
+            listener_socket = socket(AF_INET, SOCK_STREAM, 0);
+            if (listener_socket == -1) throw std::runtime_error("SERVER: Failed to open listener socket.");
+            listener_open = true;
+
+            err_status = bind(listener_socket, (struct sockaddr*) &server_address, sizeof(server_address));
+            if (err_status == -1) throw std::runtime_error("SERVER: Failed to bind listener socket.");
+
+            err_status = ::listen(listener_socket, 5);
+            if (err_status == -1) throw std::runtime_error("SERVER: Failed to set listener socket status.");
+        }
+
+        catch (const std::exception& e) {
+            std::cerr << e.what() << std::endl;
+            std::cerr << "Reason: " << std::strerror(errno) << std::endl;
+        }
+    }
+
     void close() {
         if (receiver_open) ::close(receiver_socket);
         if (listener_open) ::close(listener_socket);
     }
-
-private:
 
     const uint16_t port;
 
@@ -138,7 +143,6 @@ int main() {
 
     SocketDemo::Server server(65535, 1024);
 
-    server.open();
     server.accept();
 
     int err_status;
@@ -146,8 +150,6 @@ int main() {
         err_status = server.poll();
         if (err_status != 0) break;
     }
-
-    server.close();
 
     return err_status;
 }
