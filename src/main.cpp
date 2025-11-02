@@ -1,8 +1,8 @@
 #include <cerrno>
+#include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <netinet/in.h>
-#include <stdlib.h>
 #include <string>
 #include <sys/socket.h>
 #include <thread>
@@ -10,51 +10,50 @@
 #include <vector>
 
 
-int server_main()
-{
+int server_main() {
 
-    sockaddr_in serverAddress;
-    serverAddress.sin_family = AF_INET;
-    serverAddress.sin_port = htons(65535);
-    serverAddress.sin_addr.s_addr = INADDR_ANY;
+    sockaddr_in server_address;
+    server_address.sin_family = AF_INET;
+    server_address.sin_port = htons(65535);
+    server_address.sin_addr.s_addr = INADDR_ANY;
 
-    int listenerSocket;
-    int receiverSocket;
+    int listener_socket;
+    int receiver_socket;
 
-    bool listenerOpen = false;
-    bool receiverOpen = false;
+    bool listener_open = false;
+    bool receiver_open = false;
 
-    int errStatus;
+    int err_status;
 
     try {
 
-        listenerSocket = socket(AF_INET, SOCK_STREAM, 0);
-        if (listenerSocket == -1) throw std::runtime_error("SERVER: Failed to open listener socket.");
-        listenerOpen = true;
+        listener_socket = socket(AF_INET, SOCK_STREAM, 0);
+        if (listener_socket == -1) throw std::runtime_error("SERVER: Failed to open listener socket.");
+        listener_open = true;
 
-        errStatus = bind(listenerSocket, (struct sockaddr*) &serverAddress, sizeof(serverAddress));
-        if (errStatus == -1) throw std::runtime_error("SERVER: Failed to bind listener socket.");
+        err_status = bind(listener_socket, (struct sockaddr*) &server_address, sizeof(server_address));
+        if (err_status == -1) throw std::runtime_error("SERVER: Failed to bind listener socket.");
 
-        errStatus = listen(listenerSocket, 5);
-        if (errStatus == -1) throw std::runtime_error("SERVER: Failed to set listener socket status.");
+        err_status = listen(listener_socket, 5);
+        if (err_status == -1) throw std::runtime_error("SERVER: Failed to set listener socket status.");
 
-        receiverSocket = accept(listenerSocket, nullptr, nullptr);
-        if (receiverSocket == -1) throw std::runtime_error("SERVER: Failed to accept connection.");
-        receiverOpen = true;
+        receiver_socket = accept(listener_socket, nullptr, nullptr);
+        if (receiver_socket == -1) throw std::runtime_error("SERVER: Failed to accept connection.");
+        receiver_open = true;
 
         std::vector<char> buffer(1024);
 
         while (true) {
 
-            ssize_t bytesReceived = recv(receiverSocket, buffer.data(), buffer.size(), 0);
+            ssize_t bytes_received = recv(receiver_socket, buffer.data(), buffer.size(), 0);
 
-            if (bytesReceived == -1) throw std::runtime_error("SERVER: Failed to receive message.");
-            if (bytesReceived == 0) {
+            if (bytes_received == -1) throw std::runtime_error("SERVER: Failed to receive message.");
+            if (bytes_received == 0) {
                 std::cout << "SERVER: Client disconnected." << std::endl;
                 break;
             }
 
-            std::cout << "SERVER: Received message: " << std::string(buffer.data(), bytesReceived) << std::endl;
+            std::cout << "SERVER: Received message: " << std::string(buffer.data(), bytes_received) << std::endl;
         }
     }
 
@@ -63,35 +62,34 @@ int server_main()
         std::cerr << "Reason: " << std::strerror(errno) << std::endl;
     }
 
-    if (receiverOpen) close(receiverSocket);
-    if (listenerOpen) close(listenerSocket);
+    if (receiver_open) close(receiver_socket);
+    if (listener_open) close(listener_socket);
 
     return EXIT_SUCCESS;
 }
 
-int client_main()
-{
+int client_main() {
 
-    sockaddr_in serverAddress;
-    serverAddress.sin_family = AF_INET;
-    serverAddress.sin_port = htons(65535);
-    serverAddress.sin_addr.s_addr = INADDR_ANY;
+    sockaddr_in server_address;
+    server_address.sin_family = AF_INET;
+    server_address.sin_port = htons(65535);
+    server_address.sin_addr.s_addr = INADDR_ANY;
 
-    int senderSocket;
+    int sender_socket;
 
-    int errStatus;
+    int err_status;
 
     try {
 
-        senderSocket = socket(AF_INET, SOCK_STREAM, 0);
-        if (senderSocket == -1) throw std::runtime_error("CLIENT: Failed to open socket.");
+        sender_socket = socket(AF_INET, SOCK_STREAM, 0);
+        if (sender_socket == -1) throw std::runtime_error("CLIENT: Failed to open socket.");
 
-        errStatus = connect(senderSocket, (struct sockaddr*) &serverAddress, sizeof(serverAddress));
-        if (errStatus == -1) throw std::runtime_error("CLIENT: Failed to connect to server.");
+        err_status = connect(sender_socket, (struct sockaddr*) &server_address, sizeof(server_address));
+        if (err_status == -1) throw std::runtime_error("CLIENT: Failed to connect to server.");
 
-        std::string clientMessage = "Hello from client!";
-        errStatus = send(senderSocket, clientMessage.c_str(), clientMessage.size(), 0);
-        if (errStatus == -1) throw std::runtime_error("CLIENT: Failed to send message.");
+        std::string client_message = "Hello from client!";
+        err_status = send(sender_socket, client_message.c_str(), client_message.size(), 0);
+        if (err_status == -1) throw std::runtime_error("CLIENT: Failed to send message.");
     }
 
     catch (const std::exception& e) {
@@ -99,13 +97,13 @@ int client_main()
         std::cerr << "Reason: " << std::strerror(errno) << std::endl;
     }
 
-    close(senderSocket);
+    close(sender_socket);
     return EXIT_SUCCESS;
 }
 
 
-int main()
-{
+int main() {
+
     std::thread server_thread (server_main);
     std::thread client_thread (client_main);
 
