@@ -85,12 +85,7 @@ private:
     }
 
     void close() {
-        if (!sender_open) {
-            errno = 0;
-            throw std::runtime_error("CLIENT: No socket to close.");
-        }
-
-        ::close(sender_socket);
+        if (sender_open) ::close(sender_socket);
     }
 
     sockaddr_in server_address;
