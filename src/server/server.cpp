@@ -80,6 +80,8 @@ public:
             std::cout << "SERVER: Client disconnected." << std::endl;
 
             receiver_watcher.stop();
+            ::close(receiver_socket);
+
             if (listener_open) listener_watcher.start(listener_socket, ev::READ);
         }
 
@@ -109,7 +111,6 @@ private:
     }
 
     void close() {
-        if (receiver_open) ::close(receiver_socket);
         if (listener_open) ::close(listener_socket);
     }
 
