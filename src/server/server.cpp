@@ -13,6 +13,62 @@
 
 namespace SocketDemo {
 
+class Receiver {
+
+public:
+
+    Receiver(
+        const int a_listener_socket,
+        const std::size_t a_buffer_size
+    )
+    : buffer(a_buffer_size)
+    {
+        receiver_socket = accept(a_listener_socket, nullptr, nullptr);
+        if (receiver_socket == -1) throw std::runtime_error("SERVER: Failed to accept connection.");
+        receiver_socket_open = true;
+
+        receiver_watcher.set<Receiver, &Receiver::watcher_cb>(this);
+        receiver_watcher.start(receiver_socket, ev::READ);
+    }
+
+    ~Receiver() {
+        if (receiver_watcher.active) receiver_watcher.stop();
+        if (receiver_socket_open) close(receiver_socket);
+    }
+
+    Receiver(const Receiver& other) = delete;
+    Receiver& operator=(const Receiver& other) = delete;
+
+    void watcher_cb(ev::io &watcher, int revents) {
+
+        bytes_received = recv(receiver_socket, buffer.data(), buffer.size(), 0);
+
+        if (bytes_received == -1) throw std::runtime_error("SERVER: Failed to receive message.");
+
+        if (bytes_received == 0) {
+            std::cout << "SERVER: Client disconnected." << std::endl;
+
+            receiver_watcher.stop();
+            close(receiver_socket);
+        }
+
+        else {
+            std::cout << "SERVER: Received message: " << std::string(buffer.data(), bytes_received) << std::endl;
+        }
+    }
+
+private:
+
+    int receiver_socket = -1;
+    bool receiver_socket_open = false;
+    ev::io receiver_watcher;
+
+    std::vector<char> buffer;
+    ssize_t bytes_received = 0;
+
+}; // class Receiver
+
+
 class Server {
 
 public:
@@ -24,12 +80,11 @@ public:
     )
     : port(a_port)
     , loop(a_loop)
+    , receiver_buffer_size(a_buffer_size)
     {
         server_address.sin_family = AF_INET;
         server_address.sin_port = htons(port);
         server_address.sin_addr.s_addr = INADDR_ANY;
-
-        buffer.resize(a_buffer_size);
 
         open();
     }
@@ -55,39 +110,9 @@ public:
             throw std::runtime_error("SERVER: No listener socket to accept connections on.");
         }
 
-        receiver_socket = ::accept(listener_socket, nullptr, nullptr);
-        if (receiver_socket == -1) throw std::runtime_error("SERVER: Failed to accept connection.");
-        receiver_open = true;
-
-        listener_watcher.stop();
-
-        receiver_watcher.set<Server, &Server::receiver_cb>(this);
-        receiver_watcher.start(receiver_socket, ev::READ);
-    }
-
-    void receiver_cb(ev::io &watcher, int revents) {
-
-        if (!receiver_open) {
-            errno = 0;
-            throw std::runtime_error("SERVER: No receiver socket to poll.");
-        }
-
-        bytes_received = recv(receiver_socket, buffer.data(), buffer.size(), 0);
-
-        if (bytes_received == -1) throw std::runtime_error("SERVER: Failed to receive message.");
-
-        if (bytes_received == 0) {
-            std::cout << "SERVER: Client disconnected." << std::endl;
-
-            receiver_watcher.stop();
-            ::close(receiver_socket);
-
-            if (listener_open) listener_watcher.start(listener_socket, ev::READ);
-        }
-
-        else {
-            std::cout << "SERVER: Received message: " << std::string(buffer.data(), bytes_received) << std::endl;
-        }
+        receivers.emplace_back(
+            std::make_unique<Receiver>(listener_socket, receiver_buffer_size)
+        );
     }
 
 private:
@@ -119,14 +144,10 @@ private:
     bool listener_open = false;
     ev::io listener_watcher;
 
-    int receiver_socket = -1;
-    bool receiver_open = false;
-    ev::io receiver_watcher;
+    std::vector<std::unique_ptr<Receiver>> receivers;
+    std::size_t receiver_buffer_size;
 
     int err_status = 0;
-    ssize_t bytes_received = 0;
-
-    std::vector<char> buffer;
 
 }; // class Server
 
