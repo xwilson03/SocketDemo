@@ -1,6 +1,7 @@
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
+#include <ev++.h>
 #include <iostream>
 #include <netinet/in.h>
 #include <string>
@@ -18,9 +19,11 @@ public:
 
     Server(
         const uint16_t a_port,
-        const std::size_t a_buffer_size
-    ):
-    port(a_port)
+        const std::size_t a_buffer_size,
+        ev::loop_ref a_loop
+    )
+    : port(a_port)
+    , loop(a_loop)
     {
         server_address.sin_family = AF_INET;
         server_address.sin_port = htons(port);
@@ -39,13 +42,15 @@ public:
     Server& operator=(const Server& other) = delete;
 
     void run() {
-        while(true) {
-            accept();
-            while(poll());
-        }
+
+        listener_watcher.set<Server, &Server::listener_cb>(this);
+        receiver_watcher.set<Server, &Server::receiver_cb>(this);
+
+        listener_watcher.start(listener_socket, ev::READ);
+        loop.run();
     }
 
-    void accept() {
+    void listener_cb(ev::io &watcher, int revents) {
 
         if (!listener_open) {
             errno = 0;
@@ -55,9 +60,12 @@ public:
         receiver_socket = ::accept(listener_socket, nullptr, nullptr);
         if (receiver_socket == -1) throw std::runtime_error("SERVER: Failed to accept connection.");
         receiver_open = true;
+
+        listener_watcher.stop();
+        receiver_watcher.start(receiver_socket, ev::READ);
     }
 
-    int poll() {
+    void receiver_cb(ev::io &watcher, int revents) {
 
         if (!receiver_open) {
             errno = 0;
@@ -67,13 +75,17 @@ public:
         bytes_received = recv(receiver_socket, buffer.data(), buffer.size(), 0);
 
         if (bytes_received == -1) throw std::runtime_error("SERVER: Failed to receive message.");
+
         if (bytes_received == 0) {
             std::cout << "SERVER: Client disconnected." << std::endl;
-            return 1;
+
+            receiver_watcher.stop();
+            if (listener_open) listener_watcher.start(listener_socket, ev::READ);
         }
 
-        std::cout << "SERVER: Received message: " << std::string(buffer.data(), bytes_received) << std::endl;
-        return 0;
+        else {
+            std::cout << "SERVER: Received message: " << std::string(buffer.data(), bytes_received) << std::endl;
+        }
     }
 
 private:
@@ -104,11 +116,15 @@ private:
     const uint16_t port;
     sockaddr_in server_address;
 
-    int listener_socket = -1;
-    int receiver_socket = -1;
+    ev::loop_ref &loop;
 
+    int listener_socket = -1;
     bool listener_open = false;
+    ev::io listener_watcher;
+
+    int receiver_socket = -1;
     bool receiver_open = false;
+    ev::io receiver_watcher;
 
     int err_status = 0;
     ssize_t bytes_received = 0;
@@ -123,7 +139,8 @@ private:
 int main() {
 
     try {
-        SocketDemo::Server server(65535, 1024);
+        ev::default_loop loop;
+        SocketDemo::Server server(65535, 1024, loop);
         server.run();
     }
 
