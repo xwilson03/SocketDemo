@@ -38,6 +38,13 @@ public:
     Server(const Server& other) = delete;
     Server& operator=(const Server& other) = delete;
 
+    void run() {
+        while(true) {
+            accept();
+            while(poll());
+        }
+    }
+
     void accept() {
 
         if (!listener_open) {
@@ -117,11 +124,7 @@ int main() {
 
     try {
         SocketDemo::Server server(65535, 1024);
-
-        while(true) {
-            server.accept();
-            while(server.poll());
-        }
+        server.run();
     }
 
     catch (const std::exception& e) {
