@@ -1,9 +1,9 @@
+#include <arpa/inet.h>
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <netinet/in.h>
-#include <arpa/inet.h>
 #include <string>
 #include <sys/socket.h>
 #include <thread>
