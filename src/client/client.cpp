@@ -76,17 +76,13 @@ private:
 
     void open() {
 
-        if (sender_open) {
-            errno = 0;
-            throw std::runtime_error("CLIENT: Socket already open.");
-        }
-
         sender_socket = socket(AF_INET, SOCK_STREAM, 0);
         if (sender_socket == -1) throw std::runtime_error("CLIENT: Failed to open socket.");
         sender_open = true;
     }
 
     void close() {
+
         if (sender_open) ::close(sender_socket);
     }
 

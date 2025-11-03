@@ -94,11 +94,6 @@ private:
 
     void open() {
 
-        if (listener_open) {
-            errno = 0;
-            throw std::runtime_error("SERVER: Listener socket already open.");
-        }
-
         listener_socket = socket(AF_INET, SOCK_STREAM, 0);
         if (listener_socket == -1) throw std::runtime_error("SERVER: Failed to open listener socket.");
         listener_open = true;
@@ -111,6 +106,7 @@ private:
     }
 
     void close() {
+
         if (listener_open) ::close(listener_socket);
     }
 
