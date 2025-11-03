@@ -44,8 +44,6 @@ public:
     void run() {
 
         listener_watcher.set<Server, &Server::listener_cb>(this);
-        receiver_watcher.set<Server, &Server::receiver_cb>(this);
-
         listener_watcher.start(listener_socket, ev::READ);
         loop.run();
     }
@@ -62,6 +60,8 @@ public:
         receiver_open = true;
 
         listener_watcher.stop();
+
+        receiver_watcher.set<Server, &Server::receiver_cb>(this);
         receiver_watcher.start(receiver_socket, ev::READ);
     }
 
