@@ -27,21 +27,17 @@ Client::Client(
     err_status = inet_pton(AF_INET, a_server_address.data(), &server_address.sin_addr);
     if (err_status == -1) throw std::runtime_error("CLIENT: Invalid server address.");
 
-    open();
+    sender_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (sender_socket == -1) throw std::runtime_error("CLIENT: Failed to open socket.");
 }
 
 Client::~Client()
 {
-    close();
+    close(sender_socket);
 }
 
 void Client::connect()
 {
-    if (!sender_open) {
-        errno = 0;
-        throw std::runtime_error("CLIENT: Socket not opened.");
-    }
-
     err_status = ::connect(sender_socket, (struct sockaddr*) &server_address, sizeof(server_address));
     if (err_status == -1) throw std::runtime_error("CLIENT: Failed to connect to server.");
 }
@@ -51,11 +47,6 @@ void Client::send(
     const size_t length
 )
 {
-    if (!sender_open) {
-        errno = 0;
-        throw std::runtime_error("CLIENT: Socket not opened.");
-    }
-
     ssize_t total_bytes_sent = 0;
     while (total_bytes_sent < length) {
         bytes_sent = ::send(
@@ -67,16 +58,4 @@ void Client::send(
         if (bytes_sent == -1) throw std::runtime_error("CLIENT: Failed to send message.");
         total_bytes_sent += bytes_sent;
     }
-}
-
-void Client::open()
-{
-    sender_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (sender_socket == -1) throw std::runtime_error("CLIENT: Failed to open socket.");
-    sender_open = true;
-}
-
-void Client::close()
-{
-    if (sender_open) ::close(sender_socket);
 }

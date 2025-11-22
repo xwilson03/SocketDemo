@@ -69,12 +69,20 @@ Server::Server(
     server_address.sin_family = AF_INET;
     server_address.sin_port = htons(port);
     server_address.sin_addr.s_addr = INADDR_ANY;
-    open();
+
+    listener_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (listener_socket == -1) throw std::runtime_error("SERVER: Failed to open listener socket.");
+
+    err_status = bind(listener_socket, (struct sockaddr*) &server_address, sizeof(server_address));
+    if (err_status == -1) throw std::runtime_error("SERVER: Failed to bind listener socket.");
+
+    err_status = ::listen(listener_socket, 5);
+    if (err_status == -1) throw std::runtime_error("SERVER: Failed to set listener socket status.");
 }
 
 Server::~Server()
 {
-    close();
+    close(listener_socket);
 }
 
 void Server::run()
@@ -89,30 +97,7 @@ void Server::listener_cb(
     int revents
 )
 {
-    if (!listener_open) {
-        errno = 0;
-        throw std::runtime_error("SERVER: No listener socket to accept connections on.");
-    }
-
     receivers.emplace_back(
         std::make_unique<Receiver>(listener_socket, receiver_buffer_size)
     );
-}
-
-void Server::open()
-{
-    listener_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (listener_socket == -1) throw std::runtime_error("SERVER: Failed to open listener socket.");
-    listener_open = true;
-
-    err_status = bind(listener_socket, (struct sockaddr*) &server_address, sizeof(server_address));
-    if (err_status == -1) throw std::runtime_error("SERVER: Failed to bind listener socket.");
-
-    err_status = ::listen(listener_socket, 5);
-    if (err_status == -1) throw std::runtime_error("SERVER: Failed to set listener socket status.");
-}
-
-void Server::close()
-{
-    if (listener_open) ::close(listener_socket);
 }

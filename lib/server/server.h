@@ -68,16 +68,12 @@ public:
 
 private:
 
-    void open();
-    void close();
-
     const uint16_t port;
     sockaddr_in server_address;
 
     ev::loop_ref &loop;
 
     int listener_socket = -1;
-    bool listener_open = false;
     ev::io listener_watcher;
 
     std::vector<std::unique_ptr<Receiver>> receivers;

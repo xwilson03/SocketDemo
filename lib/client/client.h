@@ -36,14 +36,10 @@ public:
 
 private:
 
-    void open();
-    void close();
-
     const uint16_t port;
     sockaddr_in server_address;
 
     int sender_socket = -1;
-    bool sender_open = false;
 
     int err_status = 0;
     ssize_t bytes_sent = 0;
