@@ -1,8 +1,7 @@
-add_executable(client
+add_library(client
   client.cpp
 )
 
-install(
-  TARGETS client
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+target_include_directories(client
+  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 )

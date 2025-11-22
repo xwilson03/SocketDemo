@@ -10,111 +10,73 @@
 #include <unistd.h>
 #include <vector>
 
+#include "client.h"
 
-namespace SocketDemo {
+using namespace SocketDemo;
 
-class Client {
 
-public:
+Client::Client(
+    const uint16_t a_port,
+    const std::string &a_server_address
+)
+: port(a_port)
+{
+    server_address.sin_family = AF_INET;
+    server_address.sin_port = htons(a_port);
 
-    Client(
-        const uint16_t a_port,
-        const std::string &a_server_address
-    ):
-    port(a_port)
-    {
-        server_address.sin_family = AF_INET;
-        server_address.sin_port = htons(a_port);
+    err_status = inet_pton(AF_INET, a_server_address.data(), &server_address.sin_addr);
+    if (err_status == -1) throw std::runtime_error("CLIENT: Invalid server address.");
 
-        err_status = inet_pton(AF_INET, a_server_address.data(), &server_address.sin_addr);
-        if (err_status == -1) throw std::runtime_error("CLIENT: Invalid server address.");
+    open();
+}
 
-        open();
+Client::~Client()
+{
+    close();
+}
+
+void Client::connect()
+{
+    if (!sender_open) {
+        errno = 0;
+        throw std::runtime_error("CLIENT: Socket not opened.");
     }
 
-    ~Client() {
-        close();
+    err_status = ::connect(sender_socket, (struct sockaddr*) &server_address, sizeof(server_address));
+    if (err_status == -1) throw std::runtime_error("CLIENT: Failed to connect to server.");
+}
+
+void Client::send(
+    const void *data,
+    const size_t length
+)
+{
+    if (!sender_open) {
+        errno = 0;
+        throw std::runtime_error("CLIENT: Socket not opened.");
     }
 
-    Client(const Client& other) = delete;
-    Client& operator=(const Client& other) = delete;
-
-    void connect() {
-        if (!sender_open) {
-            errno = 0;
-            throw std::runtime_error("CLIENT: Socket not opened.");
-        }
-
-        err_status = ::connect(sender_socket, (struct sockaddr*) &server_address, sizeof(server_address));
-        if (err_status == -1) throw std::runtime_error("CLIENT: Failed to connect to server.");
+    ssize_t total_bytes_sent = 0;
+    while (total_bytes_sent < length) {
+        bytes_sent = ::send(
+            sender_socket,
+            data + total_bytes_sent,
+            length - total_bytes_sent,
+            0
+        );
+        if (bytes_sent == -1) throw std::runtime_error("CLIENT: Failed to send message.");
+        total_bytes_sent += bytes_sent;
     }
+}
 
-    void send(
-        const void *data,
-        const size_t length
-    ) {
-        if (!sender_open) {
-            errno = 0;
-            throw std::runtime_error("CLIENT: Socket not opened.");
-        }
+void Client::open()
+{
+    sender_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (sender_socket == -1) throw std::runtime_error("CLIENT: Failed to open socket.");
+    sender_open = true;
+}
 
-        ssize_t total_bytes_sent = 0;
-        while (total_bytes_sent < length) {
-            bytes_sent = ::send(
-                sender_socket,
-                data + total_bytes_sent,
-                length - total_bytes_sent,
-                0
-            );
-            if (bytes_sent == -1) throw std::runtime_error("CLIENT: Failed to send message.");
-            total_bytes_sent += bytes_sent;
-        }
-
-    }
-
-private:
-
-    void open() {
-
-        sender_socket = socket(AF_INET, SOCK_STREAM, 0);
-        if (sender_socket == -1) throw std::runtime_error("CLIENT: Failed to open socket.");
-        sender_open = true;
-    }
-
-    void close() {
-
-        if (sender_open) ::close(sender_socket);
-    }
-
-    const uint16_t port;
-    sockaddr_in server_address;
-
-    int sender_socket = -1;
-    bool sender_open = false;
-
-    int err_status = 0;
-    ssize_t bytes_sent = 0;
-
-}; // class Client
-
-} // namespace SocketDemo
-
-
-int main() {
-
-    std::string message = "Hello from Client!";
-
-    try {
-        SocketDemo::Client client(65535, "127.0.0.1");
-
-        client.connect();
-        client.send(message.data(), message.size());
-    }
-
-    catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
-        std::cerr << "Reason: " << std::strerror(errno) << std::endl;
-    }
-
-    return EXIT_SUCCESS;
+void Client::close()
+{
+    if (sender_open) ::close(sender_socket);
 }
