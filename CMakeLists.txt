@@ -7,4 +7,5 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(GNUInstallDirs)
 
-add_subdirectory(src)
+add_subdirectory(lib)
+add_subdirectory(app)

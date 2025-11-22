@@ -1,0 +1,2 @@
+add_subdirectory(client_example)
+add_subdirectory(server_example)
