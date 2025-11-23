@@ -5,8 +5,8 @@ int main() {
 
     try {
         ev::default_loop loop;
-        SocketDemo::Server server(65535, 1024, loop);
-        server.run();
+        SocketDemo::Server server(65535, 1024);
+        loop.run();
     }
 
     catch (const std::exception& e) {

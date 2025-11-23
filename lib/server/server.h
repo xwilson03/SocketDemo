@@ -50,16 +50,13 @@ public:
 
     Server(
         const uint16_t a_port,
-        const std::size_t a_buffer_size,
-        ev::loop_ref &a_loop
+        const std::size_t a_buffer_size
     );
 
     ~Server();
 
     Server(const Server& other) = delete;
     Server& operator=(const Server& other) = delete;
-
-    void run();
 
     void listener_cb(
         ev::io &watcher,
@@ -70,8 +67,6 @@ private:
 
     const uint16_t port;
     sockaddr_in server_address;
-
-    ev::loop_ref &loop;
 
     int listener_socket = -1;
     ev::io listener_watcher;

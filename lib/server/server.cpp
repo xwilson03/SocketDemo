@@ -59,11 +59,9 @@ void Receiver::watcher_cb(
 
 Server::Server(
     const uint16_t a_port,
-    const std::size_t a_buffer_size,
-    ev::loop_ref &a_loop
+    const std::size_t a_buffer_size
 )
 : port(a_port)
-, loop(a_loop)
 , receiver_buffer_size(a_buffer_size)
 {
     server_address.sin_family = AF_INET;
@@ -78,18 +76,14 @@ Server::Server(
 
     err_status = ::listen(listener_socket, 5);
     if (err_status == -1) throw std::runtime_error("SERVER: Failed to set listener socket status.");
+
+    listener_watcher.set<Server, &Server::listener_cb>(this);
+    listener_watcher.start(listener_socket, ev::READ);
 }
 
 Server::~Server()
 {
     close(listener_socket);
-}
-
-void Server::run()
-{
-    listener_watcher.set<Server, &Server::listener_cb>(this);
-    listener_watcher.start(listener_socket, ev::READ);
-    loop.run();
 }
 
 void Server::listener_cb(
