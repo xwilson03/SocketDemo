@@ -16,23 +16,22 @@ using namespace SocketDemo;
 
 
 Receiver::Receiver(
-    const int a_listener_socket,
-    const std::size_t a_buffer_size
+    const int a_receiver_socket,
+    const std::size_t a_buffer_size,
+    const std::function<void(const int)> a_disconnect_callback
 )
 : buffer(a_buffer_size)
+, receiver_socket(a_receiver_socket)
+, disconnect_callback(a_disconnect_callback)
 {
-    receiver_socket = accept(a_listener_socket, nullptr, nullptr);
-    if (receiver_socket == -1) throw std::runtime_error("SERVER: Failed to accept connection.");
-    receiver_socket_open = true;
-
     receiver_watcher.set<Receiver, &Receiver::watcher_cb>(this);
     receiver_watcher.start(receiver_socket, ev::READ);
 }
 
 Receiver::~Receiver()
 {
-    if (receiver_watcher.active) receiver_watcher.stop();
-    if (receiver_socket_open) close(receiver_socket);
+    receiver_watcher.stop();
+    close(receiver_socket);
 }
 
 void Receiver::watcher_cb(
@@ -46,9 +45,7 @@ void Receiver::watcher_cb(
 
     if (bytes_received == 0) {
         std::cout << "SERVER: Client disconnected." << std::endl;
-
-        receiver_watcher.stop();
-        close(receiver_socket);
+        disconnect_callback(receiver_socket);
     }
 
     else {
@@ -79,6 +76,8 @@ Server::Server(
 
     listener_watcher.set<Server, &Server::listener_cb>(this);
     listener_watcher.start(listener_socket, ev::READ);
+
+    collector_watcher.set<Server, &Server::collector_cb>(this);
 }
 
 Server::~Server()
@@ -91,7 +90,39 @@ void Server::listener_cb(
     int revents
 )
 {
-    receivers.emplace_back(
-        std::make_unique<Receiver>(listener_socket, receiver_buffer_size)
-    );
+    int receiver_socket = accept(listener_socket, nullptr, nullptr);
+    if (receiver_socket == -1) throw std::runtime_error("SERVER: Failed to accept connection.");
+
+    receivers.emplace(receiver_socket, std::make_unique<Receiver>(
+        receiver_socket,
+        receiver_buffer_size,
+        [this](const int receiver_id){
+            this->queue_free(receiver_id);
+        }
+    ));
+}
+
+void Server::collector_cb(
+    ev::timer &watcher,
+    int revents
+)
+{
+    std::cout << "Freeing " << stale_receivers.size() << " stale receivers!" << std::endl;
+
+    std::cout << "Map size before: " << receivers.size() << std::endl;
+    for (const int receiver_id : stale_receivers) {
+        receivers.erase(receiver_id);
+    }
+    std::cout << "Map size after: "  << receivers.size() << std::endl;
+
+    stale_receivers.clear();
+    collector_watcher.stop();
+}
+
+void Server::queue_free(
+    const int receiver_id
+)
+{
+    stale_receivers.push_back(receiver_id);
+    collector_watcher.start();
 }

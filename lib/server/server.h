@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ev++.h>
+#include <functional>
 #include <iostream>
 #include <netinet/in.h>
 #include <string>
@@ -18,8 +19,9 @@ class Receiver {
 public:
 
     Receiver(
-        const int a_listener_socket,
-        const std::size_t a_buffer_size
+        const int a_receiver_socket,
+        const std::size_t a_buffer_size,
+        const std::function<void(const int)> a_disconnect_callback
     );
 
     ~Receiver();
@@ -34,9 +36,10 @@ public:
 
 private:
 
-    int receiver_socket = -1;
-    bool receiver_socket_open = false;
+    const int receiver_socket = -1;
     ev::io receiver_watcher;
+
+    const std::function<void(const int)> disconnect_callback;
 
     std::vector<char> buffer;
     ssize_t bytes_received = 0;
@@ -63,6 +66,15 @@ public:
         int revents
     );
 
+    void collector_cb(
+        ev::timer &watcher,
+        int revents
+    );
+
+    void queue_free(
+        const int receiver_id
+    );
+
 private:
 
     const uint16_t port;
@@ -71,7 +83,10 @@ private:
     int listener_socket = -1;
     ev::io listener_watcher;
 
-    std::vector<std::unique_ptr<Receiver>> receivers;
+    ev::timer collector_watcher;
+    std::vector<int> stale_receivers;
+
+    std::unordered_map<int, std::unique_ptr<Receiver>> receivers;
     std::size_t receiver_buffer_size;
 
     int err_status = 0;
