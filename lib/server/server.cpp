@@ -41,15 +41,15 @@ void Receiver::watcher_cb(
 {
     bytes_received = recv(receiver_socket, buffer.data(), buffer.size(), 0);
 
-    if (bytes_received == -1) throw std::runtime_error("SERVER: Failed to receive message.");
+    if (bytes_received == -1) throw std::runtime_error("Failed to receive message.");
 
     if (bytes_received == 0) {
-        std::cout << "SERVER: Client disconnected." << std::endl;
+        std::cout << "Client disconnected." << std::endl;
         disconnect_callback(receiver_socket);
     }
 
     else {
-        std::cout << "SERVER: Received message: " << std::string(buffer.data(), bytes_received) << std::endl;
+        std::cout << "Received message: " << std::string(buffer.data(), bytes_received) << std::endl;
     }
 }
 
@@ -68,13 +68,13 @@ Server::Server(
     server_address.sin_addr.s_addr = INADDR_ANY;
 
     listener_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (listener_socket == -1) throw std::runtime_error("SERVER: Failed to open listener socket.");
+    if (listener_socket == -1) throw std::runtime_error("Failed to open listener socket.");
 
     err_status = bind(listener_socket, (struct sockaddr*) &server_address, sizeof(server_address));
-    if (err_status == -1) throw std::runtime_error("SERVER: Failed to bind listener socket.");
+    if (err_status == -1) throw std::runtime_error("Failed to bind listener socket.");
 
     err_status = ::listen(listener_socket, 5);
-    if (err_status == -1) throw std::runtime_error("SERVER: Failed to set listener socket status.");
+    if (err_status == -1) throw std::runtime_error("Failed to set listener socket status.");
 
     listener_watcher.set<Server, &Server::listener_cb>(this);
     listener_watcher.start(listener_socket, ev::READ);
@@ -98,7 +98,7 @@ void Server::listener_cb(
 )
 {
     int receiver_socket = accept(listener_socket, nullptr, nullptr);
-    if (receiver_socket == -1) throw std::runtime_error("SERVER: Failed to accept connection.");
+    if (receiver_socket == -1) throw std::runtime_error("Failed to accept connection.");
 
     receivers.emplace(receiver_socket, std::make_unique<Receiver>(
         receiver_socket,
