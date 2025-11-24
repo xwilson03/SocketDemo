@@ -13,18 +13,21 @@ echo
 set -eux
 
 
-# Main
+main() {
 
-SOURCE_DIR=$REPO_DIR
-BUILD_DIR=$REPO_DIR/.build
-INSTALL_DIR=$REPO_DIR/.install
+    SOURCE_DIR=$REPO_DIR
+    BUILD_DIR=$REPO_DIR/.build
+    INSTALL_DIR=$REPO_DIR/.install
 
-cmake \
-    -G Ninja \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
-    -B $BUILD_DIR \
-    -S $SOURCE_DIR
+    cmake \
+        -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
+        -B $BUILD_DIR \
+        -S $SOURCE_DIR
 
-cmake --build $BUILD_DIR
-cmake --install $BUILD_DIR
+    cmake --build $BUILD_DIR
+    cmake --install $BUILD_DIR
+}
+
+main "$@"
