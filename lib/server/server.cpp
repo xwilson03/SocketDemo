@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "server.h"
+#include "spdlog/spdlog.h"
 
 using namespace SocketDemo;
 
@@ -44,12 +45,12 @@ void Receiver::watcher_cb(
     if (bytes_received == -1) throw std::runtime_error("Failed to receive message.");
 
     if (bytes_received == 0) {
-        std::cout << "Client disconnected." << std::endl;
+        spdlog::info("Client disconnected.");
         disconnect_callback(receiver_socket);
     }
 
     else {
-        std::cout << "Received message: " << std::string(buffer.data(), bytes_received) << std::endl;
+        spdlog::info("Received message: {}", std::string(buffer.data(), bytes_received));
     }
 }
 
@@ -114,13 +115,13 @@ void Server::collector_cb(
     int revents
 )
 {
-    std::cout << "Freeing " << stale_receivers.size() << " stale receivers!" << std::endl;
+    spdlog::debug("Freeing {} stale receivers!", stale_receivers.size());
 
-    std::cout << "Map size before: " << receivers.size() << std::endl;
+    spdlog::debug("Map size before: {}", receivers.size());
     for (const int receiver_id : stale_receivers) {
         receivers.erase(receiver_id);
     }
-    std::cout << "Map size after: "  << receivers.size() << std::endl;
+    spdlog::debug("Map size after: {}", receivers.size());
 
     stale_receivers.clear();
     collector_watcher.stop();

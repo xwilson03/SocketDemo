@@ -1,3 +1,6 @@
+find_package(spdlog REQUIRED)
+
+
 add_executable(client_example
   main.cpp
 )
@@ -5,6 +8,7 @@ add_executable(client_example
 target_link_libraries(client_example
   PRIVATE
     client
+    spdlog::spdlog
 )
 
 install(

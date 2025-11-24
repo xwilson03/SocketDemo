@@ -8,6 +8,8 @@ FetchContent_Declare(ev
 
 FetchContent_MakeAvailable(ev)
 
+find_package(spdlog REQUIRED)
+
 
 add_library(server
   server.cpp
@@ -16,6 +18,7 @@ add_library(server
 target_link_libraries(server
   PUBLIC
     ev::ev
+    spdlog::spdlog
 )
 
 target_include_directories(server
