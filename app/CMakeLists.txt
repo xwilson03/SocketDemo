@@ -1,2 +1,3 @@
 add_subdirectory(client_example)
 add_subdirectory(server_example)
+add_subdirectory(stress_test)
