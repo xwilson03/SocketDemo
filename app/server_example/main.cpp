@@ -5,7 +5,7 @@ int main() {
 
     try {
         ev::default_loop loop;
-        SocketDemo::Server server(65535, 1024);
+        SocketDemo::Server server(65535, 1024, nullptr);
         loop.run();
     }
 

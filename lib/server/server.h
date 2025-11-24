@@ -53,7 +53,8 @@ public:
 
     Server(
         const uint16_t a_port,
-        const std::size_t a_buffer_size
+        const std::size_t a_buffer_size,
+        ev::async *a_shutdown_handle
     );
 
     ~Server();
@@ -75,6 +76,8 @@ public:
         const int receiver_id
     );
 
+    void shutdown();
+
 private:
 
     const uint16_t port;
@@ -88,6 +91,8 @@ private:
 
     std::unordered_map<int, std::unique_ptr<Receiver>> receivers;
     std::size_t receiver_buffer_size;
+
+    ev::async *shutdown_handle;
 
     int err_status = 0;
 

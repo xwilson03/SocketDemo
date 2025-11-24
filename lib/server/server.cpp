@@ -56,10 +56,12 @@ void Receiver::watcher_cb(
 
 Server::Server(
     const uint16_t a_port,
-    const std::size_t a_buffer_size
+    const std::size_t a_buffer_size,
+    ev::async *a_shutdown_handle
 )
 : port(a_port)
 , receiver_buffer_size(a_buffer_size)
+, shutdown_handle(a_shutdown_handle)
 {
     server_address.sin_family = AF_INET;
     server_address.sin_port = htons(port);
@@ -78,6 +80,11 @@ Server::Server(
     listener_watcher.start(listener_socket, ev::READ);
 
     collector_watcher.set<Server, &Server::collector_cb>(this);
+
+    if (shutdown_handle != nullptr) {
+        shutdown_handle->set<Server, &Server::shutdown>(this);
+        shutdown_handle->start();
+    }
 }
 
 Server::~Server()
@@ -125,4 +132,13 @@ void Server::queue_free(
 {
     stale_receivers.push_back(receiver_id);
     collector_watcher.start();
+}
+
+void Server::shutdown()
+{
+    shutdown_handle->stop();
+
+    listener_watcher.stop();
+    receivers.clear();
+    collector_watcher.stop();
 }
