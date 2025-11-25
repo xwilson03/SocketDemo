@@ -7,9 +7,9 @@ int main() {
     std::string message = "Hello from Client!";
 
     try {
-        SocketDemo::Client client(65535, "127.0.0.1");
+        SocketDemo::Client client;
 
-        client.connect();
+        client.connect(65535, "127.0.0.1");
         client.send(message.data(), message.size());
     }
 

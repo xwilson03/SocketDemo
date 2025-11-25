@@ -30,11 +30,11 @@ int client_main() {
     try {
 
         for (int i = 0; i < N; i++) {
-            clients.emplace_back(std::make_unique<SocketDemo::Client>(65535, "127.0.0.1"));
+            clients.emplace_back(std::make_unique<SocketDemo::Client>());
         }
 
         for (const auto &client : clients) {
-            client->connect();
+            client->connect(65535, "127.0.0.1");
         }
 
         for (const auto &client : clients) {

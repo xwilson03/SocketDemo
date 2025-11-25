@@ -15,18 +15,8 @@
 using namespace SocketDemo;
 
 
-Client::Client(
-    const uint16_t a_port,
-    const std::string &a_server_address
-)
-: port(a_port)
+Client::Client()
 {
-    server_address.sin_family = AF_INET;
-    server_address.sin_port = htons(a_port);
-
-    err_status = inet_pton(AF_INET, a_server_address.data(), &server_address.sin_addr);
-    if (err_status == -1) throw std::runtime_error("Invalid server address.");
-
     sender_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (sender_socket == -1) throw std::runtime_error("Failed to open socket.");
 }
@@ -36,8 +26,18 @@ Client::~Client()
     close(sender_socket);
 }
 
-void Client::connect()
+void Client::connect(
+    const uint16_t a_port,
+    const std::string &a_server_address
+)
 {
+    sockaddr_in server_address;
+    server_address.sin_family = AF_INET;
+    server_address.sin_port = htons(a_port);
+
+    err_status = inet_pton(AF_INET, a_server_address.data(), &server_address.sin_addr);
+    if (err_status == -1) throw std::runtime_error("Invalid server address.");
+
     err_status = ::connect(sender_socket, (struct sockaddr*) &server_address, sizeof(server_address));
     if (err_status == -1) throw std::runtime_error("Failed to connect to server.");
 }

@@ -17,17 +17,16 @@ class Client {
 
 public:
 
-    Client(
-        const uint16_t a_port,
-        const std::string &a_server_address
-    );
-
+    Client();
     ~Client();
 
     Client(const Client& other) = delete;
     Client& operator=(const Client& other) = delete;
 
-    void connect();
+    void connect(
+        const uint16_t a_port,
+        const std::string &a_server_address
+    );
 
     void send(
         const void *data,
@@ -35,9 +34,6 @@ public:
     );
 
 private:
-
-    const uint16_t port;
-    sockaddr_in server_address;
 
     int sender_socket = -1;
 
