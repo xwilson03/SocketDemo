@@ -1,0 +1,26 @@
+Checks: '-*,
+        bugprone-*,
+        cert-*,
+        cppcoreguidelines-*,
+        misc-*,
+        modernize-*,
+        performance-*,
+        portability-*,
+        readability-*,
+        -abseil-*,
+        -altera-*,
+        -android-*,
+        -fuchsia-*,
+        -google-*,
+        -llvm*,
+        -cppcoreguidelines-non-private-member-variables-in-classes,
+        -misc-non-private-member-variables-in-classes,
+        -modernize-use-trailing-return-type,
+        -readability-avoid-const-params-in-decls,
+        -readability-else-after-return,
+        -readability-static-accessed-through-instance,
+        -zircon-*
+'
+WarningsAsErrors: ''
+FormatStyle: 'none'
+HeaderFilterRegex: '^(app|lib)/'
