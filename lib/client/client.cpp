@@ -1,16 +1,8 @@
-#include <arpa/inet.h>
-#include <cerrno>
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
-#include <netinet/in.h>
-#include <string>
-#include <sys/socket.h>
-#include <thread>
-#include <unistd.h>
-#include <vector>
-
 #include "client.h"
+
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <stdexcept>
 
 using namespace SocketDemo;
 

@@ -1,14 +1,5 @@
-#include <arpa/inet.h>
-#include <cerrno>
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
-#include <netinet/in.h>
+#include <cstdint>
 #include <string>
-#include <sys/socket.h>
-#include <thread>
-#include <unistd.h>
-#include <vector>
 
 
 namespace SocketDemo {

@@ -1,15 +1,8 @@
-#include <cerrno>
-#include <cstdlib>
-#include <cstring>
 #include <ev++.h>
 #include <functional>
-#include <iostream>
+#include <cstdint>
 #include <netinet/in.h>
-#include <string>
-#include <sys/socket.h>
-#include <thread>
-#include <unistd.h>
-#include <vector>
+#include <memory>
 
 
 namespace SocketDemo {
