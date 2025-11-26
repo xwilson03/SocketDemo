@@ -1,6 +1,6 @@
 #include "client.h"
 #include "server.h"
-#include <functional>
+#include "spdlog/spdlog.h"
 
 
 int server_main(ev::default_loop *loop, ev::async *server_shutdown_handle) {
@@ -11,8 +11,7 @@ int server_main(ev::default_loop *loop, ev::async *server_shutdown_handle) {
     }
 
     catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
-        std::cerr << "Reason: " << std::strerror(errno) << std::endl;
+        spdlog::error("{}\n\tReason: {}", e.what(), std::strerror(errno));
     }
 
     return EXIT_SUCCESS;
@@ -43,8 +42,7 @@ int client_main() {
     }
 
     catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
-        std::cerr << "Reason: " << std::strerror(errno) << std::endl;
+        spdlog::error("{}\n\tReason: {}", e.what(), std::strerror(errno));
     }
 
     return EXIT_SUCCESS;
