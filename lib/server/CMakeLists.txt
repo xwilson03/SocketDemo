@@ -1,15 +1,4 @@
-include(FetchContent)
-
-
-FetchContent_Declare(ev
-  GIT_REPOSITORY https://github.com/sjinks/libev-cmake
-  GIT_TAG v4.33
-)
-
-FetchContent_MakeAvailable(ev)
-
 find_package(spdlog REQUIRED)
-
 
 add_library(server
   server.cpp
