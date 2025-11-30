@@ -7,7 +7,7 @@ using namespace SocketDemo;
 Receiver::Receiver(
     const int a_receiver_socket,
     const std::size_t a_buffer_size,
-    const std::function<void(const int)> a_disconnect_callback
+    const std::function<void(const int)> &a_disconnect_callback
 )
 : buffer(a_buffer_size)
 , receiver_socket(a_receiver_socket)
@@ -28,9 +28,17 @@ void Receiver::watcher_cb(
     int revents
 )
 {
-    bytes_received = recv(receiver_socket, buffer.data(), buffer.size(), 0);
+    if ((revents & EV_ERROR) != 0) {
+        spdlog::error("Error with ev::io in Receiver::watcher_cb.");
+        watcher.stop();
+        return;
+    }
 
-    if (bytes_received == -1) throw std::runtime_error("Failed to receive message.");
+    bytes_received = recv(watcher.fd, buffer.data(), buffer.size(), 0);
+
+    if (bytes_received == -1) {
+        throw std::runtime_error("Failed to receive message.");
+    }
 
     if (bytes_received == 0) {
         spdlog::info("Client disconnected.");
@@ -51,19 +59,31 @@ Server::Server(
 : port(a_port)
 , receiver_buffer_size(a_buffer_size)
 , shutdown_handle(a_shutdown_handle)
+, listener_socket(socket(AF_INET, SOCK_STREAM, 0))
+, server_address()
 {
     server_address.sin_family = AF_INET;
     server_address.sin_port = htons(port);
     server_address.sin_addr.s_addr = INADDR_ANY;
 
-    listener_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (listener_socket == -1) throw std::runtime_error("Failed to open listener socket.");
+    if (listener_socket == -1) {
+        throw std::runtime_error("Failed to open listener socket.");
+    }
 
-    err_status = bind(listener_socket, (struct sockaddr*) &server_address, sizeof(server_address));
-    if (err_status == -1) throw std::runtime_error("Failed to bind listener socket.");
+    err_status = bind(
+        listener_socket,
+        reinterpret_cast<struct sockaddr*>(&server_address),
+        sizeof(server_address)
+    );
+    if (err_status == -1) {
+        throw std::runtime_error("Failed to bind listener socket.");
+    }
 
-    err_status = ::listen(listener_socket, 5);
-    if (err_status == -1) throw std::runtime_error("Failed to set listener socket status.");
+    const int connection_queue_size = 5;
+    err_status = ::listen(listener_socket, connection_queue_size);
+    if (err_status == -1) {
+        throw std::runtime_error("Failed to set listener socket status.");
+    }
 
     listener_watcher.set<Server, &Server::listener_cb>(this);
     listener_watcher.start(listener_socket, ev::READ);
@@ -86,8 +106,16 @@ void Server::listener_cb(
     int revents
 )
 {
-    int receiver_socket = accept(listener_socket, nullptr, nullptr);
-    if (receiver_socket == -1) throw std::runtime_error("Failed to accept connection.");
+    if ((revents & EV_ERROR) != 0) {
+        spdlog::error("Error with ev::io in Server::listener_cb.");
+        watcher.stop();
+        return;
+    }
+
+    const int receiver_socket = accept(watcher.fd, nullptr, nullptr);
+    if (receiver_socket == -1) {
+        throw std::runtime_error("Failed to accept connection.");
+    }
 
     receivers.emplace(receiver_socket, std::make_unique<Receiver>(
         receiver_socket,
@@ -103,6 +131,12 @@ void Server::collector_cb(
     int revents
 )
 {
+    if ((revents & EV_ERROR) != 0) {
+        spdlog::error("Error with ev::timer in Server::collector_cb.");
+        watcher.stop();
+        return;
+    }
+
     spdlog::debug("Freeing {} stale receivers!", stale_receivers.size());
 
     spdlog::debug("Map size before: {}", receivers.size());
@@ -112,7 +146,7 @@ void Server::collector_cb(
     spdlog::debug("Map size after: {}", receivers.size());
 
     stale_receivers.clear();
-    collector_watcher.stop();
+    watcher.stop();
 }
 
 void Server::queue_free(

@@ -4,9 +4,12 @@
 
 int main() {
 
+    const uint16_t port = 65535;
+    const std::size_t buffer_size = 1024;
+
     try {
         ev::default_loop loop;
-        SocketDemo::Server server(65535, 1024, nullptr);
+        const SocketDemo::Server server(port, buffer_size, nullptr);
         loop.run();
     }
 

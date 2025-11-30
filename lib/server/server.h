@@ -14,7 +14,7 @@ public:
     Receiver(
         const int a_receiver_socket,
         const std::size_t a_buffer_size,
-        const std::function<void(const int)> a_disconnect_callback
+        const std::function<void(const int)> &a_disconnect_callback
     );
 
     ~Receiver();
