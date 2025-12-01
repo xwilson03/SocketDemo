@@ -24,6 +24,6 @@ Checks: '-*,
         -readability-static-accessed-through-instance,
         -zircon-*
 '
-WarningsAsErrors: ''
+WarningsAsErrors: '*'
 FormatStyle: 'none'
 HeaderFilterRegex: '^(app|lib)/'

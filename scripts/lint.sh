@@ -25,18 +25,23 @@ main() {
       | jq '[.[] | select(.file | test("_deps") | not)]' \
     > $TMP_DIR/compile_commands.json
 
+    FAILED=0
+
     cppcheck \
         --project=$TMP_DIR/compile_commands.json \
         --enable=all \
         --suppress="*:*_deps*" \
         --suppress=missingIncludeSystem \
-    2> cppcheck.log \
-    || true
+        --error-exitcode=1 \
+    || FAILED=1
 
     run-clang-tidy \
         -p $TMP_DIR \
-    > clang-tidy.log \
-    || true
+    || FAILED=1
+
+    if [[ $FAILED -ne 0 ]]; then
+        exit 1
+    fi
 }
 
 main "$@"
